@@ -2,14 +2,10 @@ package app;
 
 import bridge.ConcreteImplementations.ApplePayPlatform;
 import bridge.ConcreteImplementations.Cash;
-//import bridge.ConcreteImplementations.MobilePlatform;
 import bridge.ConcreteImplementations.VisaPlatform;
-//import bridge.ConcreteImplementations.WebPlatform;
 import bridge.RefinedAbstraction.OfflinePayment;
 import bridge.RefinedAbstraction.OnlinePayment;
-//import bridge.RefinedAbstraction.QuizContent;
-//import bridge.RefinedAbstraction.VideoContent;
-//import bridge.abstraction.CourseContent;
+
 import bridge.abstraction.PaymentContent;
 import builder.*;
 import decorator.component.CourseComponent;
@@ -20,8 +16,11 @@ import factory.Creator.UserFactory;
 import factory.product.User;
 import observer.publisher.OnlineEducationPlatform;
 import observer.publisher.Student;
-import strategy.concreteStrategy.ExcludeSoftwareStrategy;
-import strategy.context.RecommendationEngine;
+import strategy.concreteStrategy.HybridStrategy;
+import strategy.concreteStrategy.InstructorLedStrategy;
+import strategy.concreteStrategy.SelfPacedStrategy;
+import strategy.context.CourseCompletionNotifier;
+import strategy.context.CourseProgressTracker;
 
 import java.util.List;
 
@@ -70,30 +69,30 @@ public class Main {
         student2.showRole();
         teacher.showRole();
 
-        // Decorator
-        CourseComponent decorated = new BonusMaterialDecorator(
-                new CertificateDecorator(new BasicCourse()));
-        System.out.println(decorated.getDescription() + " | Price: " + decorated.getPrice());
-
-        // Bridge
-
-        PaymentContent onlinePayment = new OnlinePayment(new ApplePayPlatform());
-        PaymentContent offlinePaymentCash = new OfflinePayment(new Cash());
-        PaymentContent offlinePaymentVisa = new OfflinePayment(new VisaPlatform());
-
-        onlinePayment.processPayment();
-        offlinePaymentCash.processPayment();
-        offlinePaymentVisa.processPayment();
-
+        System.out.println();
+        System.out.println("Academic performance");
         // Strategy
-        RecommendationEngine engine = new RecommendationEngine(
-                new ExcludeSoftwareStrategy(mainCourse)
-        );
-        engine.recommend(courses)
-                .forEach(c -> System.out.println("Recommended: " + c.getTitle()));
+        CourseProgressTracker tracker = new CourseProgressTracker(new SelfPacedStrategy(mainCourse));
+        CourseCompletionNotifier notifier = new CourseCompletionNotifier(new SelfPacedStrategy(mainCourse));
+
+        tracker.showProgress("Aya", 2, 5);
+        tracker.showProgress("Marat", 3, 5);
+
+
+        tracker.setStrategy(new InstructorLedStrategy(mainCourse));
+        tracker.showProgress("Aya", 2, 5);
+
+        notifier.notifyProgress("Marat", 5, 5);
+
+
+        tracker.setStrategy(new HybridStrategy(mainCourse));
+        notifier.setStrategy(new HybridStrategy(mainCourse));
+
+        notifier.notifyProgress("Aya", 4, 5);
 
         //observer
-
+        System.out.println();
+        System.out.println("New messages for student");
         OnlineEducationPlatform platform = new OnlineEducationPlatform();
 
         Student studentAya = new Student("Aya");
@@ -107,5 +106,23 @@ public class Main {
         platform.unregister(studentMarat);
 
         platform.newWebinar("Advanced Python");
+
+        System.out.println();
+        System.out.println("Payment for this month");
+        // Decorator
+        CourseComponent basicCourse = new BasicCourse();
+        CourseComponent certifiedCourse = new CertificateDecorator(basicCourse);
+        CourseComponent decoratedCourse = new BonusMaterialDecorator(certifiedCourse);
+        System.out.println(decoratedCourse.getDescription() + " | Price: " + decoratedCourse.getPrice());
+
+        // Bridge
+
+        PaymentContent onlinePayment = new OnlinePayment(new ApplePayPlatform());
+        PaymentContent offlinePaymentCash = new OfflinePayment(new Cash());
+        PaymentContent offlinePaymentVisa = new OfflinePayment(new VisaPlatform());
+
+        onlinePayment.processPayment();
+        offlinePaymentCash.processPayment();
+        offlinePaymentVisa.processPayment();
     }
 }
